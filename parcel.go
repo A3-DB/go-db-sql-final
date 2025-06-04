@@ -100,24 +100,20 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 func (s ParcelStore) SetAddress(number int, address string) error {
 	// реализуйте обновление адреса в таблице parcel
 	// менять адрес можно только если значение статуса registered
-	var status string
 
-	err := s.db.QueryRow(
-		`SELECT status FROM parcel WHERE number = ?`,
-		number,
-	).Scan(&status)
+	result, err := s.db.Exec("UPDATE parcel SET address = ? WHERE number = ? AND status = 'registered'", address, number)
 
 	if err != nil {
 		return err
 	}
 
-	if status != "registered" {
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
 		return fmt.Errorf("address can only be updated if status is 'registered'")
-	}
-
-	_, err = s.db.Exec("UPDATE parcel SET address = ? WHERE number = ?", address, number)
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -126,25 +122,18 @@ func (s ParcelStore) SetAddress(number int, address string) error {
 func (s ParcelStore) Delete(number int) error {
 	// реализуйте удаление строки из таблицы parcel
 	// удалять строку можно только если значение статуса registered
-
-	var status string
-
-	err := s.db.QueryRow(
-		`SELECT status FROM parcel WHERE number = ?`,
-		number,
-	).Scan(&status)
-
+	result, err := s.db.Exec("DELETE FROM parcel WHERE number = ? AND status = 'registered'", number)
 	if err != nil {
 		return err
 	}
 
-	if status != "registered" {
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
 		return fmt.Errorf("cannot delete: status is not 'registered'")
-	}
-
-	_, err = s.db.Exec("DELETE FROM parcel WHERE number = ?", number)
-	if err != nil {
-		return err
 	}
 
 	return nil

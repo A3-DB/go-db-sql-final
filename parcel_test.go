@@ -33,9 +33,8 @@ func getTestParcel() Parcel {
 func TestAddGetDelete(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "tracker.db")
-	if err != nil {
-		require.NoError(t, err)
-	}
+	require.NoError(t, err)
+
 	defer db.Close()
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
@@ -55,6 +54,7 @@ func TestAddGetDelete(t *testing.T) {
 	assert.Equal(t, parcel.Status, got.Status)
 	assert.Equal(t, parcel.Address, got.Address)
 	assert.Equal(t, parcel.CreatedAt, got.CreatedAt)
+	assert.NotZero(t, got.Number)
 
 	// delete
 	// удалите добавленную посылку, убедитесь в отсутствии ошибки
@@ -114,7 +114,7 @@ func TestSetStatus(t *testing.T) {
 
 	// set status
 	// обновите статус, убедитесь в отсутствии ошибки
-	newStatus := "delivered"
+	const newStatus = "delivered"
 	err = store.SetStatus(id, newStatus)
 	require.NoError(t, err)
 
@@ -161,7 +161,7 @@ func TestGetByClient(t *testing.T) {
 	// get by client
 	storedParcels, err := store.GetByClient(client)
 	require.NoError(t, err)
-	require.Equal(t, len(parcels), len(storedParcels))
+	require.Len(t, storedParcels, len(parcels))
 	// убедитесь в отсутствии ошибки
 	// убедитесь, что количество полученных посылок совпадает с количеством добавленных
 
@@ -169,9 +169,6 @@ func TestGetByClient(t *testing.T) {
 	for _, parcel := range storedParcels {
 		expected, exists := parcelMap[parcel.Number]
 		assert.True(t, exists, "unexpected parcel with number %d", parcel.Number)
-		assert.Equal(t, expected.Client, parcel.Client)
-		assert.Equal(t, expected.Status, parcel.Status)
-		assert.Equal(t, expected.Address, parcel.Address)
-		assert.Equal(t, expected.CreatedAt, parcel.CreatedAt)
+		assert.Equal(t, expected, parcel)
 	}
 }
